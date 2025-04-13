@@ -39,7 +39,7 @@
     async function fetchData() {
       try {
         const response = await fetch('https://io.adafruit.com/api/v2/Vladi_85/feeds/gps_data/data/last', {
-          headers: { 'X-AIO-Key': 'aio_yVSZ879S2ifzYWMA7qlv9lf7cIKl' }
+          headers: { 'X-AIO-Key': 'aio_VgBA23X5XppngkXVZpVfIOSiS0ic' }
         });
         const item = await response.json();
         const payload = JSON.parse(item.value);
