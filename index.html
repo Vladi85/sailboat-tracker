@@ -39,12 +39,14 @@
     const AIO_USERNAME = 'Vladi_85';
     const FEED = 'gps_data';
 
-    const client = mqtt.connect('wss://io.adafruit.com/mqtt/', {
-      clientId: 'anon-' + Math.random().toString(16).substr(2, 8)
+    const client = mqtt.connect('wss://io.adafruit.com:443/mqtt', {
+      username: AIO_USERNAME,
+      password: '', // Leave blank for public feeds
+      clientId: 'sailboat-tracker-' + Math.random().toString(16).substr(2, 8)
     });
 
     client.on('connect', () => {
-      console.log('Connected to Adafruit IO anonymously');
+      console.log('Connected to Adafruit IO MQTT');
       client.subscribe(`${AIO_USERNAME}/feeds/${FEED}`);
     });
 
