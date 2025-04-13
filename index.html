@@ -24,7 +24,6 @@
   <div class="info" id="info">Waiting for GPS data...</div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script>
     const map = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -37,20 +36,18 @@
     const infoBox = document.getElementById('info');
     const trackPoints = [];
 
-    const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
-
-    client.on('connect', () => {
-      console.log('Connected to MQTT broker');
-      client.subscribe('esp32/sailboat/gps');
-    });
-
-    client.on('message', (topic, message) => {
+    async function fetchData() {
       try {
-        const data = JSON.parse(message.toString());
-        const lat = data.lat;
-        const lon = data.lon;
-        const speed = data.speed;
-        const timestamp = new Date().toLocaleTimeString();
+        const response = await fetch('https://io.adafruit.com/api/v2/Vladi_85/feeds/gps_data/data/last', {
+          headers: { 'X-AIO-Key': 'aio_yVSZ879S2ifzYWMA7qlv9lf7cIKl' }
+        });
+        const item = await response.json();
+        const payload = JSON.parse(item.value);
+
+        const lat = payload.lat;
+        const lon = payload.lon;
+        const speed = payload.speed;
+        const timestamp = payload.timestamp || new Date().toLocaleTimeString();
 
         marker.setLatLng([lat, lon]);
         trackPoints.push([lat, lon]);
@@ -59,9 +56,12 @@
         map.setView([lat, lon], 13);
         infoBox.innerHTML = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}<br>Speed: ${speed.toFixed(2)} km/h<br>Updated: ${timestamp}`;
       } catch (err) {
-        console.error('Invalid GPS data', err);
+        console.error('Failed to fetch GPS data:', err);
       }
-    });
+    }
+
+    setInterval(fetchData, 5000); // Fetch every 5 seconds
+    fetchData();
   </script>
 </body>
 </html>
