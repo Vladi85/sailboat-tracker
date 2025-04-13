@@ -26,46 +26,61 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
   <script>
+    // Function to generate a unique clientId for the web client (GitHub Pages)
+    function generateClientId() {
+      return 'sailboat-tracker-web-' + Math.random().toString(16).substr(2, 8);
+    }
+
+    const AIO_USERNAME = 'Vladi_85';  // Your Adafruit IO username
+    const FEED = 'gps_data';  // Your MQTT feed
+
+    // Create an MQTT client with a unique client ID for the web client
+    const client = mqtt.connect('wss://io.adafruit.com:443/mqtt', {
+      username: AIO_USERNAME,
+      password: '', // Leave blank for public feeds
+      clientId: generateClientId() // Generate a unique client ID for each connection
+    });
+
+    // Initialize the map
     const map = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map);
 
+    // Create a marker for the GPS position
     let marker = L.marker([0, 0]).addTo(map);
+    // Create a polyline to track the movement
     let track = L.polyline([], { color: 'blue' }).addTo(map);
     const trackPoints = [];
     const infoBox = document.getElementById('info');
 
-    const AIO_USERNAME = 'Vladi_85';
-    const FEED = 'gps_data';
-
-    const client = mqtt.connect('wss://io.adafruit.com:443/mqtt', {
-      username: AIO_USERNAME,
-      password: '', // Leave blank for public feeds
-      clientId: 'sailboat-tracker-' + Math.random().toString(16).substr(2, 8)
-    });
-
+    // When the MQTT client connects
     client.on('connect', () => {
       console.log('Connected to Adafruit IO MQTT');
-      client.subscribe(`${AIO_USERNAME}/feeds/${FEED}`);
+      client.subscribe(`${AIO_USERNAME}/feeds/${FEED}`);  // Subscribe to the GPS feed
     });
 
+    // When a message is received from the MQTT broker
     client.on('message', (topic, message) => {
       try {
-        const data = JSON.parse(message.toString());
+        const data = JSON.parse(message.toString());  // Parse the GPS data
         const lat = data.lat;
         const lon = data.lon;
         const speed = data.speed;
-        const timestamp = data.timestamp || new Date().toLocaleTimeString();
+        const timestamp = data.timestamp || new Date().toLocaleTimeString();  // Use current time if no timestamp
 
+        // Update the marker's position on the map
         marker.setLatLng([lat, lon]);
+        // Add the new point to the track
         trackPoints.push([lat, lon]);
         track.setLatLngs(trackPoints);
 
+        // Set the map's view to the new position
         map.setView([lat, lon], 13);
+        // Update the information box with the new data
         infoBox.innerHTML = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}<br>Speed: ${speed.toFixed(2)} km/h<br>Updated: ${timestamp}`;
       } catch (err) {
-        console.error('Invalid GPS data', err);
+        console.error('Invalid GPS data', err);  // Log any error with the GPS data
       }
     });
   </script>
