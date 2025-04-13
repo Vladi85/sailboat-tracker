@@ -11,7 +11,7 @@
 
   async function fetchGPSData() {
     try {
-      const response = await fetch('https://io.adafruit.com/api/v2/Vladi_85/feeds/gps_data/data/last');
+      const response = await fetch('https://io.adafruit.com/Vladi_85/feeds/gps-data/data/last');
       const result = await response.json();
       const payload = JSON.parse(result.value);
 
