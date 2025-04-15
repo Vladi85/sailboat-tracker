@@ -4,170 +4,52 @@
   <meta charset="UTF-8" />
   <title>Sailboat Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #e0f7fa;
-      color: #004d40;
-      margin: 0;
-      padding: 0;
-    }
-
-    h1 {
-      text-align: center;
-      padding: 1rem;
-      margin: 0;
-      background: #00796b;
-      color: white;
-    }
-
-    #info {
-      text-align: center;
-      margin-top: 1rem;
-    }
-
-    #map {
-      height: 80vh;
-      width: 100%;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 0.8em;
-      margin: 1rem 0;
-    }
+    body { font-family: Arial, sans-serif; background: #e0f7fa; color: #004d40; margin: 0; padding: 0; }
+    h1 { text-align: center; padding: 1rem; margin: 0; background: #00796b; color: white; }
+    #map { height: 80vh; width: 100%; }
+    footer { text-align: center; font-size: 0.8em; margin: 1rem 0; }
   </style>
 </head>
 <body>
   <h1>⛵ Sailboat Live Tracker</h1>
-  <div id="info">
-    <p>Latitude: <span id="latitude">-</span> | Longitude: <span id="longitude">-</span> | Speed: <span id="speed">-</span> knots</p>
-    <p>Last updated: <span id="updated">-</span></p>
-  </div>
   <div id="map"></div>
-
-  <!-- Attribution -->
-  <footer>
-    Sailboat icon by 
-    <a href="https://www.flaticon.com/free-icons/sailboat" target="_blank" rel="noopener noreferrer">Freepik</a> 
-    on <a href="https://www.flaticon.com/" target="_blank" rel="noopener noreferrer">Flaticon</a>
-  </footer>
-
-  <!-- Leaflet JS -->
+  <footer>Sailboat icon by <a href="https://www.flaticon.com/free-icons/sailboat" target="_blank">Freepik</a> on Flaticon</footer>
+  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.0/mqtt.min.js"></script>
 
-  <!-- Windy API Embed Script -->
-  <script src="https://api.windy.com/assets/map-embed.js"></script>
-
   <script>
-    let map = L.map('map').setView([0, 0], 2); // Default center
+    const apiKey = '0a837a76fa04a3b8f770d1e2f14b5f03'; // Your API key here
+    const lat = 35.6895; // Latitude
+    const lon = 139.6917; // Longitude
+
+    let map = L.map('map').setView([lat, lon], 13); // Set the initial view
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Initialize Windy map overlay
-    const options = {
-      key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e', // Replace with your Windy API Key
-      lat: 0,
-      lon: 0,
-      zoom: 2,
-      embed: true,
-      leaflet: map
-    };
-
-    windyInit(options); // Correct initialization method for Windy API
-
-    // Boat icon
     const boatIcon = L.icon({
       iconUrl: 'https://www.flaticon.com/svg/static/icons/svg/7759/7759379.svg', // Sailboat icon
       iconSize: [40, 40],
       iconAnchor: [20, 20],
     });
 
-    let boatMarker = L.marker([0, 0], { icon: boatIcon }).addTo(map);
-    let route = [];
-
-    async function fetchData() {
-      try {
-        const response = await fetch('data.json');
-        const text = await response.text();
-
-        if (!text) throw new Error('Empty data.json');
-        const data = JSON.parse(text);
-
-        const lat = parseFloat(data.latitude);
-        const lon = parseFloat(data.longitude);
-        const speed = data.speed ?? 'N/A';
-
-        document.getElementById('latitude').textContent = lat.toFixed(5);
-        document.getElementById('longitude').textContent = lon.toFixed(5);
-        document.getElementById('speed').textContent = speed;
-        document.getElementById('updated').textContent = new Date().toLocaleTimeString();
-
-        // Update route trail
-        route.push([lat, lon]);
-        L.polyline(route, { color: 'blue', weight: 2 }).addTo(map);
-
-        // Update boat position
-        boatMarker.setLatLng([lat, lon]);
-        map.setView([lat, lon], 14);
-
-        // Optional: Boat rotation (heading)
-        if (data.heading !== undefined) {
-          const angle = data.heading; // Assuming heading is in degrees
-          boatMarker.setRotationAngle(angle);  // Rotate the icon based on heading
-        }
-
-      } catch (err) {
-        console.error("Error fetching or parsing data.json:", err);
-      }
+    let boatMarker = L.marker([lat, lon], { icon: boatIcon }).addTo(map);
+    
+    async function fetchWeatherData() {
+      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`);
+      const data = await response.json();
+      console.log(data);
+      const temp = data.main.temp - 273.15; // Convert Kelvin to Celsius
+      const windSpeed = data.wind.speed;
+      document.getElementById('info').textContent = `Temp: ${temp.toFixed(1)}°C | Wind: ${windSpeed} m/s`;
     }
 
-    // MQTT setup
-    const mqttClient = mqtt.connect('ws://your-broker-address:port');
-    mqttClient.on('connect', () => {
-      mqttClient.subscribe('your/topic', (err) => {
-        if (!err) {
-          console.log('Subscribed to topic');
-        }
-      });
-    });
-
-    mqttClient.on('message', (topic, message) => {
-      // Handle incoming MQTT messages and update the map
-      const data = JSON.parse(message.toString());
-      const lat = parseFloat(data.latitude);
-      const lon = parseFloat(data.longitude);
-      const speed = data.speed ?? 'N/A';
-      const heading = data.heading ?? 0;
-
-      // Update display and map
-      document.getElementById('latitude').textContent = lat.toFixed(5);
-      document.getElementById('longitude').textContent = lon.toFixed(5);
-      document.getElementById('speed').textContent = speed;
-      document.getElementById('updated').textContent = new Date().toLocaleTimeString();
-
-      route.push([lat, lon]);
-      L.polyline(route, { color: 'blue', weight: 2 }).addTo(map);
-
-      boatMarker.setLatLng([lat, lon]);
-      map.setView([lat, lon], 14);
-
-      // Rotate the boat marker based on heading (if available)
-      if (heading !== undefined) {
-        boatMarker.setRotationAngle(heading);
-      }
-    });
-
-    // Fetch data every 5 seconds (in case of no MQTT)
-    fetchData();
-    setInterval(fetchData, 5000);
+    fetchWeatherData();
   </script>
 </body>
 </html>
