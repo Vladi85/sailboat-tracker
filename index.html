@@ -7,6 +7,8 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Windy.com Overlay -->
+  <script src="https://unpkg.com/windy@1.0.0"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -58,6 +60,8 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.0/mqtt.min.js"></script>
   <script>
     let map = L.map('map').setView([0, 0], 2); // Default center
 
@@ -66,14 +70,23 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // Windy overlay
+    const windyMap = new WindyMap({
+      canvas: 'map',
+      lat: 0, 
+      lon: 0,
+      zoom: 2
+    });
+
     // Boat icon
     const boatIcon = L.icon({
-      iconUrl: 'sailboat.png', // Make sure this file is in your GitHub repo
+      iconUrl: 'sailboat.png', // Ensure this file is in your GitHub repo
       iconSize: [40, 40],
       iconAnchor: [20, 20],
     });
 
     let boatMarker = L.marker([0, 0], { icon: boatIcon }).addTo(map);
+    let route = [];
 
     async function fetchData() {
       try {
@@ -92,14 +105,62 @@
         document.getElementById('speed').textContent = speed;
         document.getElementById('updated').textContent = new Date().toLocaleTimeString();
 
-        // Update map
+        // Update route trail
+        route.push([lat, lon]);
+        L.polyline(route, { color: 'blue', weight: 2 }).addTo(map);
+
+        // Update boat position
         boatMarker.setLatLng([lat, lon]);
         map.setView([lat, lon], 14);
+
+        // Optional: Boat rotation (heading)
+        if (data.heading !== undefined) {
+          const angle = data.heading; // Assuming heading is in degrees
+          boatMarker.setRotationAngle(angle);  // Rotate the icon based on heading
+        }
+
       } catch (err) {
         console.error("Error fetching or parsing data.json:", err);
       }
     }
 
+    // MQTT setup
+    const mqttClient = mqtt.connect('ws://your-broker-address:port');
+    mqttClient.on('connect', () => {
+      mqttClient.subscribe('your/topic', (err) => {
+        if (!err) {
+          console.log('Subscribed to topic');
+        }
+      });
+    });
+
+    mqttClient.on('message', (topic, message) => {
+      // Handle incoming MQTT messages and update the map
+      const data = JSON.parse(message.toString());
+      const lat = parseFloat(data.latitude);
+      const lon = parseFloat(data.longitude);
+      const speed = data.speed ?? 'N/A';
+      const heading = data.heading ?? 0;
+
+      // Update display and map
+      document.getElementById('latitude').textContent = lat.toFixed(5);
+      document.getElementById('longitude').textContent = lon.toFixed(5);
+      document.getElementById('speed').textContent = speed;
+      document.getElementById('updated').textContent = new Date().toLocaleTimeString();
+
+      route.push([lat, lon]);
+      L.polyline(route, { color: 'blue', weight: 2 }).addTo(map);
+
+      boatMarker.setLatLng([lat, lon]);
+      map.setView([lat, lon], 14);
+
+      // Rotate the boat marker based on heading (if available)
+      if (heading !== undefined) {
+        boatMarker.setRotationAngle(heading);
+      }
+    });
+
+    // Fetch data every 5 seconds (in case of no MQTT)
     fetchData();
     setInterval(fetchData, 5000);
   </script>
