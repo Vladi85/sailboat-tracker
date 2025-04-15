@@ -71,18 +71,17 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Initialize Windy Embed
-    var options = {
+    // Initialize Windy map overlay
+    const options = {
       key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e', // Replace with your Windy API Key
-      lat: 0, 
+      lat: 0,
       lon: 0,
       zoom: 2,
       embed: true,
       leaflet: map
     };
 
-    // Initialize Windy map overlay
-    new windyMap(options);
+    windyInit(options); // Correct initialization method for Windy API
 
     // Boat icon
     const boatIcon = L.icon({
