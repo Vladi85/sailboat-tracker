@@ -1,5 +1,7 @@
 {
   "latitude": 37.7749,
   "longitude": -122.4194,
-  "speed": 10.5
+  "speed": 5.2,
+  "heading": 90,
+  "timestamp": "2025-04-15T12:00:00Z"
 }
