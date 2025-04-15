@@ -71,7 +71,7 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Initialize Windy API for Weather Overlay
+    // Initialize Windy Embed API for weather overlay
     const options = {
       key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e', // Replace with your Windy API Key
       lat: 0,
@@ -82,7 +82,7 @@
     };
 
     // Use the Windy API Embed to load weather data
-    windyInit(options);
+    window.windyInit(options);
 
     // Boat icon
     const boatIcon = L.icon({
