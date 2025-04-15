@@ -4,92 +4,77 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sailboat Tracker</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; width: 100%; }
-    #weather {
+    #map { height: 100vh; }
+    .weather-box {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(255,255,255,0.9);
-      padding: 10px 15px;
-      border-radius: 10px;
-      font-family: sans-serif;
-      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      font-family: sans-serif;
     }
   </style>
 </head>
 <body>
-  <div id="weather">Loading weather...</div>
   <div id="map"></div>
+  <div class="weather-box" id="weatherInfo">Loading...</div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    const sheetAPI = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+    const openWeatherKey = "cdeff4fc22a7dbda81fdff3410481f57";
+
+    let map = L.map('map').setView([0, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+    }).addTo(map);
+
+    const boatIcon = L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/3138/3138708.png",
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+
+    let marker = L.marker([0, 0], { icon: boatIcon }).addTo(map);
+
     async function fetchData() {
       try {
-        const res = await fetch('data.json');
+        const res = await fetch(sheetAPI);
         const data = await res.json();
+        const latest = data[data.length - 1];
 
-        const { latitude, longitude, speed, track } = data;
+        const { latitude, longitude, speed, timestamp } = latest;
+        marker.setLatLng([latitude, longitude]);
+        map.setView([latitude, longitude], 13);
 
-        // Initialize map
-        const map = L.map('map').setView([latitude, longitude], 13);
-
-        // Tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Custom sailboat icon
-        const boatIcon = L.icon({
-          iconUrl: 'https://cdn-icons-png.flaticon.com/512/4025/4025151.png',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20]
-        });
-
-        // Boat marker
-        L.marker([latitude, longitude], { icon: boatIcon }).addTo(map)
-          .bindPopup(`🚤 Speed: ${speed} knots`).openPopup();
-
-        // Polyline track
-        if (track && track.length > 1) {
-          const polyline = L.polyline(track.map(p => [p.lat, p.lon]), { color: 'blue' }).addTo(map);
-          map.fitBounds(polyline.getBounds());
-        }
-
-        // Fetch weather info
-        fetchWeatherData(latitude, longitude);
+        fetchWeather(latitude, longitude);
       } catch (err) {
-        console.error("Error fetching or parsing data.json:", err);
-        document.getElementById('weather').textContent = '⚠️ Failed to load tracking data.';
+        console.error("Fetch error:", err);
       }
     }
 
-    async function fetchWeatherData(lat, lon) {
-      const apiKey = 'cdeff4fc22a7dbda81fdff3410481f57'; // Your actual key
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-
+    async function fetchWeather(lat, lon) {
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherKey}&units=metric`);
         const data = await res.json();
-
         const temp = data.main.temp;
         const wind = data.wind.speed;
-        const description = data.weather[0].description;
 
-        document.getElementById('weather').textContent =
-          `🌡️ Temp: ${temp.toFixed(1)}°C | 💨 Wind: ${wind} m/s | ☁️ ${description}`;
+        document.getElementById("weatherInfo").innerHTML =
+          `🌡 Temp: ${temp}°C<br>💨 Wind: ${wind} m/s`;
       } catch (err) {
         console.error("Weather error:", err);
-        document.getElementById('weather').textContent = '⚠️ Weather unavailable';
+        document.getElementById("weatherInfo").innerText = "Weather unavailable";
       }
     }
 
     fetchData();
+    setInterval(fetchData, 15000);
   </script>
 </body>
 </html>
