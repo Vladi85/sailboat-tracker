@@ -12,11 +12,12 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(255,255,255,0.8);
-      padding: 8px 12px;
-      border-radius: 8px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px 15px;
+      border-radius: 10px;
       font-family: sans-serif;
       z-index: 1000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
   </style>
 </head>
@@ -50,16 +51,16 @@
         });
 
         // Boat marker
-        const marker = L.marker([latitude, longitude], { icon: boatIcon }).addTo(map)
-          .bindPopup(`Speed: ${speed} knots`).openPopup();
+        L.marker([latitude, longitude], { icon: boatIcon }).addTo(map)
+          .bindPopup(`🚤 Speed: ${speed} knots`).openPopup();
 
-        // Polyline from track
+        // Polyline track
         if (track && track.length > 1) {
           const polyline = L.polyline(track.map(p => [p.lat, p.lon]), { color: 'blue' }).addTo(map);
           map.fitBounds(polyline.getBounds());
         }
 
-        // Fetch weather
+        // Fetch weather info
         fetchWeatherData(latitude, longitude);
       } catch (err) {
         console.error("Error fetching or parsing data.json:", err);
@@ -68,8 +69,8 @@
     }
 
     async function fetchWeatherData(lat, lon) {
-      const apiKey = 'cdeff4fc22a7dbda81fdff3410481f57'; // Replace or secure if needed
-      const url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      const apiKey = 'cdeff4fc22a7dbda81fdff3410481f57'; // Your actual key
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
 
       try {
         const res = await fetch(url);
@@ -78,9 +79,10 @@
 
         const temp = data.main.temp;
         const wind = data.wind.speed;
+        const description = data.weather[0].description;
 
         document.getElementById('weather').textContent =
-          `🌡️ Temp: ${temp.toFixed(1)}°C | 💨 Wind: ${wind} m/s`;
+          `🌡️ Temp: ${temp.toFixed(1)}°C | 💨 Wind: ${wind} m/s | ☁️ ${description}`;
       } catch (err) {
         console.error("Weather error:", err);
         document.getElementById('weather').textContent = '⚠️ Weather unavailable';
