@@ -33,6 +33,12 @@
       height: 80vh;
       width: 100%;
     }
+
+    footer {
+      text-align: center;
+      font-size: 0.8em;
+      margin: 1rem 0;
+    }
   </style>
 </head>
 <body>
@@ -43,10 +49,18 @@
   </div>
   <div id="map"></div>
 
+  <!-- Attribution -->
+  <footer>
+    Sailboat icon by 
+    <a href="https://www.flaticon.com/free-icons/sailboat" target="_blank" rel="noopener noreferrer">Freepik</a> 
+    on <a href="https://www.flaticon.com/" target="_blank" rel="noopener noreferrer">Flaticon</a>
+  </footer>
+
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     let map = L.map('map').setView([0, 0], 2); // Default center
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
@@ -54,7 +68,7 @@
 
     // Boat icon
     const boatIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/584/584052.png',
+      iconUrl: 'sailboat.png', // Make sure this file is in your GitHub repo
       iconSize: [40, 40],
       iconAnchor: [20, 20],
     });
@@ -82,7 +96,7 @@
         boatMarker.setLatLng([lat, lon]);
         map.setView([lat, lon], 14);
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Error fetching or parsing data.json:", err);
       }
     }
 
