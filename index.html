@@ -71,18 +71,18 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Initialize Windy Embed API for weather overlay
-    const options = {
-      key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e', // Replace with your Windy API Key
-      lat: 0,
+    // Initialize Windy Embed
+    var options = {
+      key: 'YOUR_WINDY_API_KEY', // Replace with your Windy API Key
+      lat: 0, 
       lon: 0,
       zoom: 2,
       embed: true,
       leaflet: map
     };
 
-    // Use the Windy API Embed to load weather data
-    window.windyInit(options);
+    // Initialize Windy map overlay
+    window.windy = new Windy(options);
 
     // Boat icon
     const boatIcon = L.icon({
