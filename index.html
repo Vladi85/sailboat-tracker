@@ -1,74 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Sailboat Tracker</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; }
-    .info {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(255,255,255,0.9);
-      padding: 10px;
-      border-radius: 8px;
-      font-family: sans-serif;
-      font-size: 14px;
+  <title>Sailboat Tracker</title>
+  <script>
+    // Function to fetch the GPS data from the JSON file
+    async function fetchData() {
+      const response = await fetch('https://vladi85.github.io/sailboat-tracker/data.json');
+      const data = await response.json();
+      
+      // Update the data on the page
+      document.getElementById('latitude').innerText = `Latitude: ${data.latitude}`;
+      document.getElementById('longitude').innerText = `Longitude: ${data.longitude}`;
+      document.getElementById('speed').innerText = `Speed: ${data.speed}`;
     }
-  </style>
+
+    // Call fetchData every 5 seconds to update the displayed data
+    setInterval(fetchData, 5000);
+  </script>
 </head>
 <body>
-  <div id="map"></div>
-  <div class="info" id="info">Waiting for GPS data...</div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
-  <script>
-    const map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    let marker = L.marker([0, 0]).addTo(map);
-    let track = L.polyline([], { color: 'blue' }).addTo(map);
-    const trackPoints = [];
-    const infoBox = document.getElementById('info');
-
-    const AIO_USERNAME = 'Vladi_85';
-    const FEED = 'gps-data'; // Correct feed name here
-
-    const client = mqtt.connect('wss://io.adafruit.com:443/mqtt', {
-      username: AIO_USERNAME,
-      password: '', // Leave blank for public feeds
-      clientId: 'sailboat-tracker-' + Math.random().toString(16).substr(2, 8)
-    });
-
-    client.on('connect', () => {
-      console.log('✅ Connected to Adafruit IO MQTT');
-      client.subscribe(`${AIO_USERNAME}/feeds/${FEED}`);
-    });
-
-    client.on('message', (topic, message) => {
-      console.log('📥 MQTT message received:', topic, message.toString());
-      try {
-        const data = JSON.parse(message.toString());
-        const lat = data.lat;
-        const lon = data.lon;
-        const speed = data.speed;
-        const timestamp = data.timestamp || new Date().toLocaleTimeString();
-
-        marker.setLatLng([lat, lon]);
-        trackPoints.push([lat, lon]);
-        track.setLatLngs(trackPoints);
-
-        map.setView([lat, lon], 13);
-        infoBox.innerHTML = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}<br>Speed: ${speed.toFixed(2)} km/h<br>Updated: ${timestamp}`;
-      } catch (err) {
-        console.error('❌ Invalid GPS data', err);
-      }
-    });
-  </script>
+  <h1>Sailboat Tracker</h1>
+  <p id="latitude">Latitude: Loading...</p>
+  <p id="longitude">Longitude: Loading...</p>
+  <p id="speed">Speed: Loading...</p>
 </body>
 </html>
