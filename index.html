@@ -59,9 +59,9 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.0/mqtt.min.js"></script>
-  
-  <!-- Windy.com Leaflet Plugin -->
-  <script src="https://api.windy.com/assets/map-embed.js"></script>
+
+  <!-- Windy Leaflet Plugin -->
+  <script src="https://cdn.windy.com/assets/leaflet-windy.min.js"></script>
 
   <script>
     let map = L.map('map').setView([0, 0], 2); // Default center
@@ -71,15 +71,9 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Windy overlay using the correct API integration
-    windyInit({
-      key: 'YOUR_WINDY_API_KEY', // Replace with your Windy API Key
-      lat: 0,
-      lon: 0,
-      zoom: 2,
-      embed: true,
-      leaflet: map
-    });
+    // Initialize Windy overlay
+    const windy = L.wind({ key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e' }); // Replace with your Windy API Key
+    windy.addTo(map);
 
     // Boat icon
     const boatIcon = L.icon({
