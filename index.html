@@ -60,7 +60,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.0/mqtt.min.js"></script>
 
-  <!-- Windy API -->
+  <!-- Windy API Embed Script -->
   <script src="https://api.windy.com/assets/map-embed.js"></script>
 
   <script>
@@ -71,7 +71,7 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Initialize Windy overlay
+    // Initialize Windy API for Weather Overlay
     const options = {
       key: 'gQztg7iubhM24muJAIVBQBzfcLFxiK1e', // Replace with your Windy API Key
       lat: 0,
@@ -80,8 +80,9 @@
       embed: true,
       leaflet: map
     };
-    
-    windyInit(options); // Using Windy API to initialize the overlay
+
+    // Use the Windy API Embed to load weather data
+    windyInit(options);
 
     // Boat icon
     const boatIcon = L.icon({
