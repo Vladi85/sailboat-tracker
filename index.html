@@ -2,54 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sailboat Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body { font-family: Arial, sans-serif; background: #e0f7fa; color: #004d40; margin: 0; padding: 0; }
-    h1 { text-align: center; padding: 1rem; margin: 0; background: #00796b; color: white; }
-    #map { height: 80vh; width: 100%; }
-    footer { text-align: center; font-size: 0.8em; margin: 1rem 0; }
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; width: 100%; }
+    #weather {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.8);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: sans-serif;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
-  <h1>⛵ Sailboat Live Tracker</h1>
+  <div id="weather">Loading weather...</div>
   <div id="map"></div>
-  <footer>Sailboat icon by <a href="https://www.flaticon.com/free-icons/sailboat" target="_blank">Freepik</a> on Flaticon</footer>
-  
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.0/mqtt.min.js"></script>
 
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const apiKey = 'cdeff4fc22a7dbda81fdff3410481f57'; // Your API key here
-    const lat = 35.6895; // Latitude
-    const lon = 139.6917; // Longitude
+    async function fetchData() {
+      try {
+        const res = await fetch('data.json');
+        const data = await res.json();
 
-    let map = L.map('map').setView([lat, lon], 13); // Set the initial view
+        const { latitude, longitude, speed, track } = data;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+        // Initialize map
+        const map = L.map('map').setView([latitude, longitude], 13);
 
-    const boatIcon = L.icon({
-      iconUrl: 'https://www.flaticon.com/svg/static/icons/svg/7759/7759379.svg', // Sailboat icon
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-    });
+        // Tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-    let boatMarker = L.marker([lat, lon], { icon: boatIcon }).addTo(map);
-    
-    async function fetchWeatherData() {
-      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`);
-      const data = await response.json();
-      console.log(data);
-      const temp = data.main.temp - 273.15; // Convert Kelvin to Celsius
-      const windSpeed = data.wind.speed;
-      document.getElementById('info').textContent = `Temp: ${temp.toFixed(1)}°C | Wind: ${windSpeed} m/s`;
+        // Custom sailboat icon
+        const boatIcon = L.icon({
+          iconUrl: 'https://cdn-icons-png.flaticon.com/512/4025/4025151.png',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        // Boat marker
+        const marker = L.marker([latitude, longitude], { icon: boatIcon }).addTo(map)
+          .bindPopup(`Speed: ${speed} knots`).openPopup();
+
+        // Polyline from track
+        if (track && track.length > 1) {
+          const polyline = L.polyline(track.map(p => [p.lat, p.lon]), { color: 'blue' }).addTo(map);
+          map.fitBounds(polyline.getBounds());
+        }
+
+        // Fetch weather
+        fetchWeatherData(latitude, longitude);
+      } catch (err) {
+        console.error("Error fetching or parsing data.json:", err);
+        document.getElementById('weather').textContent = '⚠️ Failed to load tracking data.';
+      }
     }
 
-    fetchWeatherData();
+    async function fetchWeatherData(lat, lon) {
+      const apiKey = 'cdeff4fc22a7dbda81fdff3410481f57'; // Replace or secure if needed
+      const url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Weather API error: ${res.status}`);
+        const data = await res.json();
+
+        const temp = data.main.temp;
+        const wind = data.wind.speed;
+
+        document.getElementById('weather').textContent =
+          `🌡️ Temp: ${temp.toFixed(1)}°C | 💨 Wind: ${wind} m/s`;
+      } catch (err) {
+        console.error("Weather error:", err);
+        document.getElementById('weather').textContent = '⚠️ Weather unavailable';
+      }
+    }
+
+    fetchData();
   </script>
 </body>
 </html>
