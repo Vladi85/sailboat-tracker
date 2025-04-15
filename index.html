@@ -1,77 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Sailboat Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #e0f7fa;
       color: #004d40;
-      text-align: center;
-      padding: 2rem;
+      margin: 0;
+      padding: 0;
     }
 
     h1 {
-      font-size: 2rem;
-    }
-
-    .data-box {
-      background: #ffffff;
-      border-radius: 10px;
+      text-align: center;
       padding: 1rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      margin: 1rem auto;
-      max-width: 300px;
+      margin: 0;
+      background: #00796b;
+      color: white;
     }
 
-    .label {
-      font-weight: bold;
+    #info {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    #map {
+      height: 80vh;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <h1>🌊 Sailboat Live Tracker</h1>
-  <div class="data-box">
-    <p class="label">Latitude:</p>
-    <p id="latitude">Loading...</p>
-
-    <p class="label">Longitude:</p>
-    <p id="longitude">Loading...</p>
-
-    <p class="label">Speed (knots):</p>
-    <p id="speed">Loading...</p>
-
-    <p class="label">Last updated:</p>
-    <p id="updated">-</p>
+  <h1>⛵ Sailboat Live Tracker</h1>
+  <div id="info">
+    <p>Latitude: <span id="latitude">-</span> | Longitude: <span id="longitude">-</span> | Speed: <span id="speed">-</span> knots</p>
+    <p>Last updated: <span id="updated">-</span></p>
   </div>
+  <div id="map"></div>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    let map = L.map('map').setView([0, 0], 2); // Default center
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Boat icon
+    const boatIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/584/584052.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+
+    let boatMarker = L.marker([0, 0], { icon: boatIcon }).addTo(map);
+
     async function fetchData() {
       try {
         const response = await fetch('data.json');
         const text = await response.text();
 
-        if (!text) throw new Error('Empty response from data.json');
-
+        if (!text) throw new Error('Empty data.json');
         const data = JSON.parse(text);
 
-        document.getElementById('latitude').textContent = data.latitude ?? 'N/A';
-        document.getElementById('longitude').textContent = data.longitude ?? 'N/A';
-        document.getElementById('speed').textContent = data.speed ?? 'N/A';
+        const lat = parseFloat(data.latitude);
+        const lon = parseFloat(data.longitude);
+        const speed = data.speed ?? 'N/A';
+
+        document.getElementById('latitude').textContent = lat.toFixed(5);
+        document.getElementById('longitude').textContent = lon.toFixed(5);
+        document.getElementById('speed').textContent = speed;
         document.getElementById('updated').textContent = new Date().toLocaleTimeString();
+
+        // Update map
+        boatMarker.setLatLng([lat, lon]);
+        map.setView([lat, lon], 14);
       } catch (err) {
-        console.error('Error fetching or parsing data.json:', err);
-        document.getElementById('latitude').textContent = 'Error';
-        document.getElementById('longitude').textContent = 'Error';
-        document.getElementById('speed').textContent = 'Error';
-        document.getElementById('updated').textContent = '-';
+        console.error("Fetch error:", err);
       }
     }
 
-    // Fetch data every 5 seconds
-    fetchData(); // Initial fetch
+    fetchData();
     setInterval(fetchData, 5000);
   </script>
 </body>
